@@ -16,6 +16,7 @@ export default function Preview(): React.JSX.Element {
   const dragRef = useRef<{ x: number; y: number } | null>(null);
   const lastWheelRef = useRef(0);
   const [size, setSize] = useState({ w: 16, h: 9 });
+  const sizeRef = useRef(size);
   const [overlay, setOverlay] = useState({ zoom: 1, upscaling: false });
   const [showThirds, setShowThirds] = useState(false);
   const [dragging, setDragging] = useState(false);
@@ -63,6 +64,10 @@ export default function Preview(): React.JSX.Element {
       if (wrap) {
         wrap.insertBefore(r.canvas, wrap.firstChild);
       }
+      // The measure/[size] effects may have already run while create() was
+      // pending — apply the current size so the renderer isn't stuck at the
+      // initial 16x9.
+      r.resize(sizeRef.current.w, sizeRef.current.h);
       void r.loadImages(useStore.getState().project.images).then(render);
     });
     return () => {
@@ -96,6 +101,7 @@ export default function Preview(): React.JSX.Element {
   }, []);
 
   useEffect(() => {
+    sizeRef.current = size;
     rendererRef.current?.resize(size.w, size.h);
     render();
   }, [size, render]);
