@@ -15,6 +15,8 @@ motion videos (Ken Burns-style camera moves) and exports MP4 (720p/1080p,
   `smoke-out/smoke-1080p30.mp4`, `smoke-out/smoke-720p25.mp4`, and
   `smoke-out/smoke-720p25-audio.mp4` (AAC audio track) and verifies them with
   ffprobe
+- `npm run dist` — build + package a Windows NSIS installer into `dist/`
+  (electron-builder; `dist/win-unpacked/` holds the unpacked app)
 
 ## Layout
 

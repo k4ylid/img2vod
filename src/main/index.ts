@@ -131,6 +131,16 @@ function createWindow(): void {
   }
 
   if (smokePayload) {
+    // Forward renderer failures so a stuck smoke run leaves a trace on stdout.
+    mainWindow.webContents.on('did-fail-load', (_e, code, desc, url) => {
+      console.log(`[smoke] did-fail-load ${code} ${desc} ${url}`);
+    });
+    mainWindow.webContents.on('render-process-gone', (_e, details) => {
+      console.log(`[smoke] render-process-gone ${details.reason}`);
+    });
+    mainWindow.webContents.on('console-message', (_e, _level, message) => {
+      console.log(`[renderer] ${message}`);
+    });
     mainWindow.webContents.once('did-finish-load', () => {
       console.log(`[smoke] starting export -> ${smokePayload.outputPath}`);
       mainWindow?.webContents.send('smoke:run', smokePayload);

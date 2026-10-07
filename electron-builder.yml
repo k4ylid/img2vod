@@ -7,6 +7,9 @@ files:
   - package.json
 asarUnpack:
   - node_modules/ffmpeg-static/**
-  - node_modules/ffprobe-static/**
+electronFuses:
+  # The embedded asar-integrity resource crashes Electron 44's network service
+  # on file:// loads from app.asar (renderer never finishes loading).
+  enableEmbeddedAsarIntegrityValidation: false
 win:
   target: nsis
