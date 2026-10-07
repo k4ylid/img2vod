@@ -4,6 +4,8 @@ import type { ExportStartOpts, FvodApi, SmokeRunPayload } from '../shared/api';
 const api: FvodApi = {
   pickImages: () => ipcRenderer.invoke('fvod:pick-images'),
   saveMp4: (defaultName: string) => ipcRenderer.invoke('fvod:save-mp4', defaultName),
+  saveProject: (json: string, path: string | null) => ipcRenderer.invoke('fvod:save-project', json, path),
+  openProject: () => ipcRenderer.invoke('fvod:open-project'),
   revealInFolder: (p: string) => ipcRenderer.invoke('fvod:reveal', p),
   exportStart: (opts: ExportStartOpts) => ipcRenderer.invoke('fvod:export-start', opts),
   exportWriteFrame: (buf: ArrayBuffer) => ipcRenderer.invoke('fvod:export-frame', buf),

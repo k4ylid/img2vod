@@ -65,7 +65,7 @@ export function sceneAt(project: Project, t: number): SceneLocation | null {
 }
 
 /** Effective move length: the first shot of a scene and 'cut' moves do not travel. */
-function effectiveMove(shot: Shot, index: number): number {
+export function effectiveMove(shot: Shot, index: number): number {
   if (index === 0 || shot.moveKind === 'cut') {
     return 0;
   }

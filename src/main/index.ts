@@ -80,6 +80,7 @@ function createWindow(): void {
     height: 900,
     minWidth: 1100,
     minHeight: 700,
+    show: !smokePayload,
     backgroundColor: '#0f1115',
     autoHideMenuBar: true,
     webPreferences: {
@@ -144,6 +145,46 @@ function registerIpc(): void {
       filters: [{ name: 'MP4 video', extensions: ['mp4'] }],
     });
     return result.canceled || !result.filePath ? null : result.filePath;
+  });
+
+  ipcMain.handle('fvod:save-project', async (_e, json: string, filePath: string | null) => {
+    let target = filePath;
+    if (!target) {
+      if (!mainWindow) {
+        return null;
+      }
+      const result = await dialog.showSaveDialog(mainWindow, {
+        title: 'Save project',
+        filters: [{ name: 'FrameVOD project', extensions: ['fvod'] }],
+      });
+      if (result.canceled || !result.filePath) {
+        return null;
+      }
+      target = result.filePath;
+    }
+    fs.writeFileSync(target, json, 'utf8');
+    return target;
+  });
+
+  ipcMain.handle('fvod:open-project', async () => {
+    if (!mainWindow) {
+      return null;
+    }
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: 'Open project',
+      properties: ['openFile'],
+      filters: [{ name: 'FrameVOD project', extensions: ['fvod'] }],
+    });
+    if (result.canceled || result.filePaths.length === 0) {
+      return null;
+    }
+    const p = result.filePaths[0];
+    try {
+      return { path: p, json: fs.readFileSync(p, 'utf8') };
+    } catch (err) {
+      console.warn(`[fvod] failed to read project ${p}: ${String(err)}`);
+      return null;
+    }
   });
 
   ipcMain.handle('fvod:reveal', async (_e, p: string) => {

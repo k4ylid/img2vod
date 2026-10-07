@@ -33,6 +33,8 @@ export interface SmokeRunPayload {
 export interface FvodApi {
   pickImages(): Promise<ImportedImage[]>;
   saveMp4(defaultName: string): Promise<string | null>;
+  saveProject(json: string, path: string | null): Promise<string | null>;
+  openProject(): Promise<{ path: string; json: string } | null>;
   revealInFolder(path: string): Promise<void>;
   exportStart(opts: ExportStartOpts): Promise<{ encoder: string }>;
   exportWriteFrame(buf: ArrayBuffer): Promise<void>;
