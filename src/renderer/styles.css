@@ -166,6 +166,7 @@ input[type='text'] {
 }
 
 .thumb {
+  position: relative;
   display: flex;
   gap: 8px;
   align-items: center;
@@ -177,6 +178,14 @@ input[type='text'] {
 
 .thumb:hover {
   background: var(--panel-2);
+}
+
+.thumb-remove {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  padding: 0 5px;
+  background: rgba(0, 0, 0, 0.65);
 }
 
 .thumb img {

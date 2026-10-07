@@ -47,15 +47,19 @@ const smokePayload: SmokeRunPayload | null = (() => {
   }
   const res = argValue('--smoke-res');
   const fps = Number(argValue('--smoke-fps') ?? '30');
+  const audio = argValue('--smoke-audio');
   return {
     outputPath: path.resolve(out),
     resolution: res === '720p' ? '720p' : ('1080p' as Resolution),
     fps: ([24, 25, 30, 60].includes(fps) ? fps : 30) as Fps,
+    audioPath: audio ? path.resolve(audio) : undefined,
   };
 })();
 
 let mainWindow: BrowserWindow | null = null;
 let currentExport: ExportSession | null = null;
+let projectDirty = false;
+let forceClose = false;
 
 /** Converts an absolute filesystem path into a fvod-file:// URL. */
 export function fileToFvodUrl(filePath: string): string {
@@ -89,6 +93,30 @@ function createWindow(): void {
       nodeIntegration: false,
       sandbox: true,
     },
+  });
+
+  mainWindow.on('close', (e) => {
+    if (!projectDirty || forceClose || smokePayload) {
+      return;
+    }
+    e.preventDefault();
+    if (!mainWindow) {
+      return;
+    }
+    const choice = dialog.showMessageBoxSync(mainWindow, {
+      type: 'warning',
+      buttons: ['Save', "Don't Save", 'Cancel'],
+      defaultId: 0,
+      cancelId: 2,
+      message: 'Save changes to the current project?',
+    });
+    if (choice === 0) {
+      // Renderer saves, then sends fvod:close-now (stays open if the save is cancelled).
+      mainWindow.webContents.send('fvod:save-and-close');
+    } else if (choice === 1) {
+      forceClose = true;
+      mainWindow.close();
+    }
   });
 
   mainWindow.on('closed', () => {
@@ -133,6 +161,18 @@ function registerIpc(): void {
       }
     }
     return out;
+  });
+
+  ipcMain.handle('fvod:pick-audio', async () => {
+    if (!mainWindow) {
+      return null;
+    }
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: 'Choose audio',
+      properties: ['openFile'],
+      filters: [{ name: 'Audio', extensions: ['mp3', 'wav', 'm4a', 'aac', 'ogg', 'flac'] }],
+    });
+    return result.canceled || result.filePaths.length === 0 ? null : result.filePaths[0];
   });
 
   ipcMain.handle('fvod:save-mp4', async (_e, defaultName: string) => {
@@ -189,6 +229,29 @@ function registerIpc(): void {
 
   ipcMain.handle('fvod:reveal', async (_e, p: string) => {
     shell.showItemInFolder(p);
+  });
+
+  ipcMain.on('fvod:set-dirty', (_e, dirty: boolean) => {
+    projectDirty = dirty;
+  });
+
+  ipcMain.handle('fvod:confirm-discard', async () => {
+    if (!mainWindow) {
+      return 'cancel';
+    }
+    const choice = await dialog.showMessageBox(mainWindow, {
+      type: 'warning',
+      buttons: ['Save', "Don't Save", 'Cancel'],
+      defaultId: 0,
+      cancelId: 2,
+      message: 'Save changes to the current project?',
+    });
+    return choice.response === 0 ? 'save' : choice.response === 1 ? 'discard' : 'cancel';
+  });
+
+  ipcMain.on('fvod:close-now', () => {
+    forceClose = true;
+    mainWindow?.close();
   });
 
   ipcMain.handle('fvod:export-start', async (_e, opts: ExportStartOpts) => {

@@ -14,7 +14,8 @@ export default function TopBar(props: { onExport: () => void; onOpen: () => void
   const canUndo = useStore((s) => s.past.length > 0);
   const canRedo = useStore((s) => s.future.length > 0);
   const exporting = useStore((s) => s.exporting);
-  const { setProjectName, updateSettings, undo, redo, newProject, saveProject } = useStore.getState();
+  const { setProjectName, updateSettings, undo, redo, newProject, saveProject, confirmDiscardIfDirty } =
+    useStore.getState();
 
   return (
     <div className="topbar">
@@ -25,7 +26,16 @@ export default function TopBar(props: { onExport: () => void; onOpen: () => void
         onChange={(e) => setProjectName(e.target.value)}
         disabled={exporting}
       />
-      <button onClick={() => newProject()} disabled={exporting}>
+      <button
+        onClick={() => {
+          void confirmDiscardIfDirty().then((ok) => {
+            if (ok) {
+              newProject();
+            }
+          });
+        }}
+        disabled={exporting}
+      >
         New
       </button>
       <button onClick={props.onOpen} disabled={exporting}>

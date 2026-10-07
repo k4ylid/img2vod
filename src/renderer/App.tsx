@@ -18,6 +18,29 @@ export default function App(): React.JSX.Element {
     document.title = `${projectName}${dirty ? ' *' : ''} - FrameVOD`;
   }, [projectName, dirty]);
 
+  // Keep the main process informed of dirty state for the close guard, and
+  // handle "save, then close" after the user picks Save in the close dialog.
+  useEffect(() => {
+    window.fvod.setDirty(useStore.getState().dirty);
+    const unsub = useStore.subscribe((s, prev) => {
+      if (s.dirty !== prev.dirty) {
+        window.fvod.setDirty(s.dirty);
+      }
+    });
+    const offSaveAndClose = window.fvod.onSaveAndClose(() => {
+      void (async () => {
+        await useStore.getState().saveProject();
+        if (!useStore.getState().dirty) {
+          window.fvod.closeWindow();
+        }
+      })();
+    });
+    return () => {
+      unsub();
+      offSaveAndClose();
+    };
+  }, []);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       const el = e.target as HTMLElement;
@@ -53,7 +76,11 @@ export default function App(): React.JSX.Element {
   }, []);
 
   const openProject = async (): Promise<void> => {
-    const err = await useStore.getState().openProject();
+    const s = useStore.getState();
+    if (!(await s.confirmDiscardIfDirty())) {
+      return;
+    }
+    const err = await s.openProject();
     setOpenError(err);
   };
 

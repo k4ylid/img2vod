@@ -133,11 +133,13 @@ export class ExportSession {
       'pipe:0',
     ];
     if (opts.audioPath) {
-      args.push('-i', opts.audioPath);
+      args.push('-i', opts.audioPath, '-map', '0:v:0', '-map', '1:a:0');
     }
     args.push(...encoderArgs(opts.encoder));
     if (opts.audioPath) {
-      args.push('-c:a', 'aac', '-b:a', '192k', '-shortest');
+      // apad pads audio shorter than the video with silence; -shortest then
+      // trims it at the video end, so the frame count always sets the length.
+      args.push('-c:a', 'aac', '-b:a', '192k', '-af', 'apad', '-shortest');
     }
     args.push('-pix_fmt', 'yuv420p', '-movflags', '+faststart', opts.outputPath);
 

@@ -125,6 +125,9 @@ async function runSmoke(payload: SmokeRunPayload): Promise<string> {
   const dims = RESOLUTION_DIMS[payload.resolution];
   project.settings.resolution = payload.resolution;
   project.settings.fps = payload.fps;
+  if (payload.audioPath) {
+    project.audio = { path: payload.audioPath, includeInExport: true };
+  }
 
   // Orientation / size sanity check at export resolution before exporting.
   const check = await FrameRenderer.create({ width: dims.width, height: dims.height });

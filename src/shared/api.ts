@@ -27,15 +27,21 @@ export interface SmokeRunPayload {
   outputPath: string;
   resolution: Resolution;
   fps: Fps;
+  audioPath?: string;
 }
 
 /** API exposed to the renderer as window.fvod via the preload contextBridge. */
 export interface FvodApi {
   pickImages(): Promise<ImportedImage[]>;
+  pickAudio(): Promise<string | null>;
   saveMp4(defaultName: string): Promise<string | null>;
   saveProject(json: string, path: string | null): Promise<string | null>;
   openProject(): Promise<{ path: string; json: string } | null>;
   revealInFolder(path: string): Promise<void>;
+  setDirty(dirty: boolean): void;
+  confirmDiscard(): Promise<'save' | 'discard' | 'cancel'>;
+  onSaveAndClose(cb: () => void): () => void;
+  closeWindow(): void;
   exportStart(opts: ExportStartOpts): Promise<{ encoder: string }>;
   exportWriteFrame(buf: ArrayBuffer): Promise<void>;
   exportEnd(): Promise<ExportEndResult>;

@@ -80,11 +80,22 @@ function EasingEditor(props: { easing: Easing; onChange: (e: Easing) => void }):
   );
 }
 
+function baseName(p: string): string {
+  return p.split(/[\\/]/).pop() ?? p;
+}
+
 export default function Inspector(): React.JSX.Element {
   const project = useStore((s) => s.project);
   const selection = useStore((s) => s.selection);
   const exporting = useStore((s) => s.exporting);
-  const { updateShot } = useStore.getState();
+  const { updateShot, setAudio, setAudioIncluded } = useStore.getState();
+
+  const pickAudio = async (): Promise<void> => {
+    const path = await window.fvod.pickAudio();
+    if (path) {
+      setAudio(path);
+    }
+  };
 
   const scene = project.scenes.find((s) => s.id === selection.sceneId);
   const shotIdx = scene ? scene.shots.findIndex((s) => s.id === selection.shotId) : -1;
@@ -110,6 +121,36 @@ export default function Inspector(): React.JSX.Element {
           <label>Duration</label>
           <span>{projectDuration(project).toFixed(1)}s</span>
         </div>
+        <h3>Audio</h3>
+        <div className="field">
+          <label>File</label>
+          <span className="audio-name" title={project.audio?.path}>
+            {project.audio ? baseName(project.audio.path) : 'None'}
+          </span>
+        </div>
+        <div className="field">
+          <button disabled={exporting} onClick={() => void pickAudio()}>
+            Choose…
+          </button>
+          {project.audio && (
+            <button disabled={exporting} onClick={() => setAudio(null)}>
+              Remove
+            </button>
+          )}
+        </div>
+        {project.audio && (
+          <div className="field">
+            <label style={{ width: 'auto' }}>
+              <input
+                type="checkbox"
+                checked={project.audio.includeInExport}
+                disabled={exporting}
+                onChange={(e) => setAudioIncluded(e.target.checked)}
+              />{' '}
+              Include in export
+            </label>
+          </div>
+        )}
         <p className="hint">
           Select a shot in the scene list or on the timeline to edit its camera, move, and hold.
           Drag on the preview to pan; use the mouse wheel to zoom.

@@ -12,8 +12,9 @@ motion videos (Ken Burns-style camera moves) and exports MP4 (720p/1080p,
 - `npm run typecheck` — strict TS check of node-side and web-side code
 - `npm test` — vitest unit tests for the pure evaluation engine (`src/shared`)
 - `npm run smoke` — build + headless end-to-end export; writes
-  `smoke-out/smoke-1080p30.mp4` and `smoke-out/smoke-720p25.mp4` and verifies
-  them with ffprobe
+  `smoke-out/smoke-1080p30.mp4`, `smoke-out/smoke-720p25.mp4`, and
+  `smoke-out/smoke-720p25-audio.mp4` (AAC audio track) and verifies them with
+  ffprobe
 
 ## Layout
 

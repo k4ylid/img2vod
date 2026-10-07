@@ -38,6 +38,7 @@ interface StoreState {
 
   addImages: (images: ImportedImage[]) => void;
   addSceneFromImage: (imageId: string) => void;
+  removeImage: (imageId: string) => void;
   removeScene: (sceneId: string) => void;
   moveScene: (sceneId: string, dir: -1 | 1) => void;
   addShot: (sceneId: string) => void;
@@ -47,7 +48,10 @@ interface StoreState {
   updateShot: (sceneId: string, shotId: string, partial: Partial<Shot>, history?: boolean) => void;
   updateSettings: (partial: Partial<ProjectSettings>) => void;
   setProjectName: (name: string) => void;
+  setAudio: (path: string | null) => void;
+  setAudioIncluded: (include: boolean) => void;
 
+  confirmDiscardIfDirty: () => Promise<boolean>;
   saveProject: (saveAs?: boolean) => Promise<void>;
   openProject: () => Promise<string | null>;
   newProject: () => void;
@@ -212,6 +216,20 @@ export const useStore = create<StoreState>((set, get) => {
       });
     },
 
+    removeImage: (imageId) => {
+      const sel = get().selection;
+      const selectedRemoved =
+        sel.sceneId !== undefined &&
+        get().project.scenes.some((s) => s.id === sel.sceneId && s.imageId === imageId);
+      if (selectedRemoved) {
+        set({ selection: {} });
+      }
+      mutate((p) => {
+        p.images = p.images.filter((i) => i.id !== imageId);
+        p.scenes = p.scenes.filter((s) => s.imageId !== imageId);
+      });
+    },
+
     removeScene: (sceneId) => {
       const sel = get().selection;
       if (sel.sceneId === sceneId) {
@@ -340,6 +358,42 @@ export const useStore = create<StoreState>((set, get) => {
       mutate((p) => {
         p.name = name;
       });
+    },
+
+    setAudio: (path) => {
+      mutate((p) => {
+        if (path === null) {
+          delete p.audio;
+        } else {
+          p.audio = { path, includeInExport: true };
+        }
+      });
+    },
+
+    setAudioIncluded: (include) => {
+      if (!get().project.audio) {
+        return;
+      }
+      mutate((p) => {
+        if (p.audio) {
+          p.audio.includeInExport = include;
+        }
+      });
+    },
+
+    confirmDiscardIfDirty: async () => {
+      if (!get().dirty) {
+        return true;
+      }
+      const choice = await window.fvod.confirmDiscard();
+      if (choice === 'cancel') {
+        return false;
+      }
+      if (choice === 'discard') {
+        return true;
+      }
+      await get().saveProject();
+      return !get().dirty;
     },
 
     saveProject: async (saveAs = false) => {

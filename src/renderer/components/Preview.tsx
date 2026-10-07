@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useStore, shotStartTime } from '../store';
-import { FrameRenderer } from '../render/FrameRenderer';
+import { FrameRenderer, toFvodUrl } from '../render/FrameRenderer';
 import { evaluateCamera, effectiveMove, projectDuration, sceneAt, viewRect } from '../../shared/engine';
 import { RESOLUTION_DIMS } from '../../shared/types';
 import type { Shot } from '../../shared/types';
@@ -12,6 +12,7 @@ export default function Preview(): React.JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<FrameRenderer | null>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
   const dragRef = useRef<{ x: number; y: number } | null>(null);
   const lastWheelRef = useRef(0);
   const [size, setSize] = useState({ w: 16, h: 9 });
@@ -137,6 +138,25 @@ export default function Preview(): React.JSX.Element {
     return () => cancelAnimationFrame(raf);
   }, [playing]);
 
+  // Best-effort audio playback alongside the playhead (no drift correction).
+  const audioPath = project.audio?.path;
+  useEffect(() => {
+    const el = audioRef.current;
+    if (!el) {
+      return;
+    }
+    if (playing) {
+      const t = useStore.getState().playhead;
+      if (!Number.isFinite(el.duration) || t < el.duration) {
+        el.currentTime = t;
+      }
+      void el.play().catch(() => {});
+    } else {
+      el.pause();
+    }
+    return () => el.pause();
+  }, [playing, audioPath]);
+
   const selectedShot = (): { sceneId: string; shot: Shot; imageId: string } | null => {
     const s = useStore.getState();
     const scene = s.project.scenes.find((sc) => sc.id === s.selection.sceneId);
@@ -232,6 +252,7 @@ export default function Preview(): React.JSX.Element {
 
   return (
     <div className={`preview${editMode ? ' edit-mode' : ''}${dragging ? ' dragging' : ''}`} ref={containerRef}>
+      {audioPath && <audio ref={audioRef} src={toFvodUrl(audioPath)} style={{ display: 'none' }} />}
       <div
         className="stage-wrap"
         ref={wrapRef}

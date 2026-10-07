@@ -5,7 +5,7 @@ import { toFvodUrl } from '../render/FrameRenderer';
 export default function MediaBin(): React.JSX.Element {
   const images = useStore((s) => s.project.images);
   const exporting = useStore((s) => s.exporting);
-  const { addImages, addSceneFromImage } = useStore.getState();
+  const { addImages, addSceneFromImage, removeImage } = useStore.getState();
   const [missing, setMissing] = useState<Set<string>>(new Set());
 
   const pick = async (): Promise<void> => {
@@ -60,6 +60,17 @@ export default function MediaBin(): React.JSX.Element {
                 {img.width}×{img.height}
               </div>
             </div>
+            <button
+              className="icon-btn thumb-remove"
+              title="Remove image and its scenes"
+              disabled={exporting}
+              onClick={(e) => {
+                e.stopPropagation();
+                removeImage(img.id);
+              }}
+            >
+              ×
+            </button>
           </div>
         ))}
       </div>
