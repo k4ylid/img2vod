@@ -51,7 +51,7 @@ export interface Shot {
   arcZoom?: number; // zoom at midpoint of an arc move; default = min(prevZoom, zoom) * 0.87
   easing: Easing;
   holdMotion: HoldMotion;
-  motionBlur: boolean; // stub flag for later
+  motionBlur: boolean; // export-only: averages sub-frame samples during moves
 }
 
 export interface Scene {

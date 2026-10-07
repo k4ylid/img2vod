@@ -43,8 +43,7 @@ export async function exportVideo(
         if (signal?.aborted) {
           throw new DOMException('Export aborted', 'AbortError');
         }
-        renderer.renderAt(project, frameTime(i, fps));
-        const pixels = renderer.readPixels();
+        const pixels = renderer.renderFrame(project, frameTime(i, fps), fps);
         const buf = pixels.buffer.slice(pixels.byteOffset, pixels.byteOffset + pixels.byteLength) as ArrayBuffer;
         await window.fvod.exportWriteFrame(buf);
         onProgress?.(i + 1, total);

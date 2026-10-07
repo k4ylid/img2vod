@@ -301,7 +301,7 @@ export default function Inspector(): React.JSX.Element {
             disabled={exporting}
             onChange={(e) => update({ motionBlur: e.target.checked })}
           />{' '}
-          Motion blur <span className="hint">(not yet implemented)</span>
+          Motion blur <span className="hint">(export only)</span>
         </label>
       </div>
     </div>

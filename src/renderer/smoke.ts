@@ -97,6 +97,7 @@ function smokeProject(imagePath: string): Project {
             moveKind: 'direct',
             camera: { cx: 0.7, cy: 0.3, zoom: 2 },
             holdMotion: { type: 'drift', amount: 0.01 },
+            motionBlur: true,
           }),
         ],
       },

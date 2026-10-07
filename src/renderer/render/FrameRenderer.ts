@@ -1,6 +1,6 @@
 import { Application, Sprite, Texture, type WebGLRenderer } from 'pixi.js';
 import type { ImageAsset, Project } from '../../shared/types';
-import { evaluateCamera, sceneAt, viewRect } from '../../shared/engine';
+import { evaluateCamera, motionBlurSampleTimes, sceneAt, viewRect } from '../../shared/engine';
 
 /** Converts an absolute filesystem path into a fvod-file:// URL (same encoding as fileToFvodUrl in main). */
 export function toFvodUrl(filePath: string): string {
@@ -24,6 +24,7 @@ export class FrameRenderer {
   private sprite: Sprite;
   private textures = new Map<string, Texture>();
   private failed = new Set<string>();
+  private blurAccum: Uint32Array | null = null;
   private width: number;
   private height: number;
 
@@ -114,6 +115,37 @@ export class FrameRenderer {
     this.sprite.scale.set(vr.effectiveScale);
     this.sprite.position.set(-vr.x * vr.effectiveScale, -vr.y * vr.effectiveScale);
     this.app.render();
+  }
+
+  /**
+   * Export path: renders the frame at time t and returns top-down RGBA bytes.
+   * When the engine says the frame needs motion blur, sub-frame samples are
+   * rendered and averaged per channel; otherwise identical to
+   * renderAt + readPixels.
+   */
+  renderFrame(project: Project, t: number, fps: number): Uint8Array {
+    const times = motionBlurSampleTimes(project, t, fps);
+    if (times.length === 1) {
+      this.renderAt(project, times[0]);
+      return this.readPixels();
+    }
+    const n = this.width * this.height * 4;
+    if (!this.blurAccum || this.blurAccum.length !== n) {
+      this.blurAccum = new Uint32Array(n);
+    }
+    const acc = this.blurAccum.fill(0);
+    for (const ts of times) {
+      this.renderAt(project, ts);
+      const px = this.readPixels();
+      for (let i = 0; i < n; i++) {
+        acc[i] += px[i];
+      }
+    }
+    const out = new Uint8Array(n);
+    for (let i = 0; i < n; i++) {
+      out[i] = Math.round(acc[i] / times.length);
+    }
+    return out;
   }
 
   /** RGBA, top-down rows, exactly width*height*4 bytes, of the last rendered frame. */
